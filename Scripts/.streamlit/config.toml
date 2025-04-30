@@ -1,0 +1,11 @@
+[theme]
+primaryColor="#6c5ce7"
+backgroundColor="#F4F8FB"      # <--- Change this to any HEX color you like
+secondaryBackgroundColor="#eaf2fb"
+textColor="#22223b"
+font="sans serif"
+
+
+[server]
+fileWatcherType = "none"
+
