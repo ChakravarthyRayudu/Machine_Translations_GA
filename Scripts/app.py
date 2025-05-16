@@ -11,30 +11,6 @@ from streamlit_google_auth import Authenticate
 # Load environment variables from .env file
 load_dotenv()
 
-# Build the dictionary using env variables
-google_credentials = {
-    "web": {
-        "client_id": os.getenv("GOOGLE_CLIENT_ID"),
-        "project_id": "alpine-figure-458405-g3",
-        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-        "token_uri": "https://oauth2.googleapis.com/token",
-        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-        "client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),
-        "redirect_uris": [
-            "http://3.107.208.214:8501"
-        ],
-        "javascript_origins": [
-            "http://localhost:8501"
-        ]
-    }
-}
-
-import json
-
-with open("google_credentials_temp.json", "w") as f:
-    json.dump(google_credentials, f)
-
-
 
 # Initialize Google Authenticator
 authenticator = Authenticate(
@@ -42,7 +18,7 @@ authenticator = Authenticate(
     cookie_name='my_cookie_name',                       # any name for your cookie
     cookie_key='this_is_secret',                        # a random secret key
     # redirect_uri='http://localhost:8501',               # your Streamlit app URL
-    redirect_uri='http://3.107.208.214:8501',               # your Streamlit app URL
+    redirect_uri='http://43.204.227.170.nip.io:8501',               # your Streamlit app URL
 
 )
  

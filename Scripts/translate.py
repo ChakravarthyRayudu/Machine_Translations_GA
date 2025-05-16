@@ -19,26 +19,85 @@ class SemanticModel:
                 cls.model = cls.model.half()
         return cls._instance
 
+
 def perform_translation(df, column, target_lang_code_deepl, target_lang_code_google):
-    """Perform forward and backward translation with batching"""
+    """Perform forward and backward translation with batching. Handles empty values and logs errors."""
+
     df[column] = df[column].astype(str)
-    
-    # Batch translate using DeepL
+
+    # Skip empty/NaN and track original indices
+    texts = df[column].tolist()
+    translated_texts = []
+    error_flags_deepl = []
+
     try:
         translator = deepl.Translator(DEEPL_API_KEY)
-        texts = df[column].tolist()
-        translated = [result.text for result in translator.translate_text(texts, target_lang=target_lang_code_deepl)]
-        df["Translated"] = translated
+        for idx, text in enumerate(texts):
+            if text.strip() == '' or text.lower() in ['nan', 'none']:
+                translated_texts.append(text)
+                error_flags_deepl.append(True)
+                continue
+            try:
+                result = translator.translate_text(text, target_lang=target_lang_code_deepl)
+                translated_texts.append(result.text)
+                error_flags_deepl.append(False)
+            except Exception as e:
+                print(f"DeepL translation failed at index {idx}: {e}")
+                translated_texts.append(text)
+                error_flags_deepl.append(True)
     except Exception as e:
-        raise RuntimeError(f"DeepL translation failed: {str(e)}")
+        print(f"Global DeepL failure: {e}")
+        translated_texts = texts  # fallback to original
+        error_flags_deepl = [True] * len(texts)
 
-    # Batch back-translate using Google
+    df["Translated"] = translated_texts
+    df["DeepL_Translation_Error"] = error_flags_deepl
+
+    # Back-translation with Google
+    back_translated = []
+    error_flags_google = []
+
     try:
-        df["Back_Translated"] = _batch_google_translate(translated, target_lang_code_google)
+        for i in range(0, len(translated_texts), 50):
+            batch = translated_texts[i:i+50]
+            batch_results = []
+            for j, text in enumerate(batch):
+                if text.strip() == '' or text.lower() in ['nan', 'none']:
+                    batch_results.append(text)
+                    error_flags_google.append(True)
+                    continue
+                try:
+                    params = {
+                        'q': text,
+                        'source': target_lang_code_google,
+                        'target': 'en',
+                        'key': GOOGLE_API_KEY
+                    }
+                    response = requests.post(
+                        "https://translation.googleapis.com/language/translate/v2",
+                        data=params
+                    )
+                    response.raise_for_status()
+                    translation = response.json()['data']['translations'][0]['translatedText']
+                    batch_results.append(translation)
+                    error_flags_google.append(False)
+                except Exception as e:
+                    print(f"Google translation failed at index {i+j}: {e}")
+                    batch_results.append(text)
+                    error_flags_google.append(True)
+            back_translated.extend(batch_results)
     except Exception as e:
-        raise RuntimeError(f"Google back-translation failed: {str(e)}")
-    
+        print(f"Global Google translation failure: {e}")
+        back_translated = translated_texts  # fallback
+        error_flags_google = [True] * len(translated_texts)
+
+    df["Back_Translated"] = back_translated
+    df["Google_Translation_Error"] = error_flags_google
+
     return df
+
+
+
 
 def perform_evaluation(df, original_col="English", backtrans_col="Back_Translated"):
     """Add evaluation metrics with batch processing"""
