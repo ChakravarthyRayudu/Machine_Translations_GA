@@ -6,3 +6,4 @@ __pycache__/
 
 # Ignore system files
 .DS_Store
+Scripts/google_credentials_temp.json

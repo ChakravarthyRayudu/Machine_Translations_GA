@@ -162,13 +162,6 @@ if uploaded_file is not None:
         col2.metric("Target Language", f"{selected_language_name} ({target_lang_code_deepl})")
         col3.metric("Characters to Translate", f"{num_characters:,}")
 
-        current_used = used if used else 0
-        current_remaining = remaining if remaining else limit
-        available_credits = current_remaining - num_characters
-
-        st.write(f"• Available credits: {current_remaining:,} characters")
-        st.write(f"• Estimated characters to be translated: {num_characters:,}")
-        st.write(f"• Available credits after translation: {available_credits:,} characters")
 
         proceed = st.button("✅ Proceed with Translation")
         back = st.button("❌ Go Back")
