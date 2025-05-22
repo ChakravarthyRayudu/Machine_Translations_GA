@@ -11,6 +11,8 @@ def calculate_semantic_similarity(original, translated):
     
     # Calculate cosine similarity
     similarity = util.pytorch_cos_sim(emb_original, emb_translated)
+    similarity = util.pytorch_cos_sim(emb_original, emb_translated)
+
     return similarity.item()
 
 # Example usage

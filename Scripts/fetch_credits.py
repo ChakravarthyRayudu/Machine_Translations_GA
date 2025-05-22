@@ -8,33 +8,25 @@ def get_deepl_usage(auth_key):
         auth_key (str): DeepL API key
     
     Returns:
-        tuple: (characters_used, character_limit, characters_remaining)
+        tuple: (characters_used, character_limit, characters_remaining, estimated_cost_usd)
     """
     try:
-        # print(auth_key)
-        # For Free API keys, specify the server_url parameter
-        translator = deepl.Translator(
-            auth_key,
-            server_url="https://api-free.deepl.com"  # Required for Free tier
-        )
-        
+        translator = deepl.Translator(auth_key)
         usage = translator.get_usage()
         
         if usage.character.valid:
-            return (
-                usage.character.count,
-                usage.character.limit,
-                usage.character.limit - usage.character.count
-            )
+            used = usage.character.count
+            limit = usage.character.limit
+            remaining = limit - used
+            estimated_cost = used / 40000  # $1 per 40,000 characters
+
+            return used, limit, remaining, estimated_cost
         else:
             raise ValueError("Character usage tracking not available for this account type")
-            
     except deepl.DeepLException as e:
-        # print(f"DeepL API Error: {str(e)}")
-        return None, None, None
+        return None, None, None, None
     except Exception as e:
-        # print(f"Unexpected error: {str(e)}")
-        return None, None, None
+        return None, None, None, None
 
 
 # used, limit, remaining = get_deepl_usage("66c2b5ff-766e-424a-adbd-4ad803cb5ea5:fx")
