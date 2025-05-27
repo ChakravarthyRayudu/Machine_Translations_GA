@@ -23,7 +23,7 @@ authenticator = Authenticate(
     secret_credentials_path='google_credentials_temp.json',
     cookie_name='my_cookie_name',
     cookie_key='this_is_secret',
-    redirect_uri='http://43.204.227.170.nip.io:8501',
+    redirect_uri='http://13.201.31.26.nip.io:8501',
 )
 
 try:
@@ -136,13 +136,17 @@ with tab_translate:
                         tgt_google = st.session_state.translation_params['target_google']
                         original_filename = st.session_state.translation_params['filename']
 
-                        df = perform_translation(df, col, tgt_deepl, tgt_google, original_filename)
-
+                        translated_df = perform_translation(df, col, tgt_deepl, tgt_google, original_filename)
+                
                         st.success("✅ Translation completed successfully!")
                         st.subheader("📋 Translated DataFrame Preview")
-                        st.dataframe(df, use_container_width=True, height=400)
+                        
+                     # Show all columns after translation
+                        st.dataframe(translated_df, use_container_width=True, height=400)
 
-                        csv = df.to_csv(index=False).encode('utf-8')
+                    
+                     # Download the full translated DF
+                        csv = translated_df.to_csv(index=False).encode('utf-8')
                         download_filename = "translated_output.csv"
                         st.download_button(
                             label="⬇️ Download Translated CSV",
@@ -172,30 +176,34 @@ with tab_translate:
 
 with tab_backups:
     st.header("📂 Translation Backup Sessions")
-    
+
     backup_sessions = list_backup_sessions()
     if not backup_sessions:
         st.info("No backup sessions found.")
     else:
         st.write("### Available Backup Sessions")
         backup_sessions.sort(reverse=True)
+
         for session in backup_sessions:
             with st.expander(f"📁 {session}", expanded=False):
                 backup_path = os.path.join("backups", session)
-                zip_filename = f"{session}.zip"
-                zip_path = os.path.join("backups", zip_filename)
-                # Only create ZIP if it doesn't exist
-                if not os.path.exists(zip_path):
-                    shutil.make_archive(
-                        os.path.join("backups", session),
-                        'zip',
-                        backup_path
-                    )
-                with open(zip_path, "rb") as f:
-                    st.download_button(
-                        "⬇️ Download Full Session as ZIP",
-                        data=f,
-                        file_name=zip_filename,
-                        key=f"zip_{session}"
-                    )
-                st.write("All files for this session are included in the ZIP.")
+
+                if os.path.exists(backup_path):
+                    files = os.listdir(backup_path)
+                    csv_files = [f for f in files if f.endswith('.csv')]
+
+                    if csv_files:
+                        for csv_file in csv_files:
+                            csv_path = os.path.join(backup_path, csv_file)
+                            with open(csv_path, "rb") as f:
+                                st.download_button(
+                                    label=f"⬇️ Download {csv_file}",
+                                    data=f,
+                                    file_name=csv_file,
+                                    mime="text/csv",
+                                    key=f"{session}_{csv_file}"
+                                )
+                    else:
+                        st.warning("No CSV files found in this session.")
+                else:
+                    st.error(f"Backup path not found: {backup_path}")
